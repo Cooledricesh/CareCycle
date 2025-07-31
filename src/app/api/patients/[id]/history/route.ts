@@ -70,8 +70,10 @@ export async function GET(
     const itemId = searchParams.get('item_id');
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 50;
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? (isNaN(parseInt(limitParam)) ? 50 : parseInt(limitParam)) : 50;
+    const offsetParam = searchParams.get('offset');
+    const offset = offsetParam ? (isNaN(parseInt(offsetParam)) ? 0 : parseInt(offsetParam)) : 0;
     const groupBy = searchParams.get('group_by'); // 'item', 'month', 'year'
     
     const supabase = await createPureClient();

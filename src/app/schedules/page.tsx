@@ -140,10 +140,10 @@ export default function SchedulesPage() {
   const sortedDates = Object.keys(groupedSchedules).sort();
 
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">일정 관리</h1>
-        <p className="text-muted-foreground">
+    <div className="container px-4 py-4 md:py-8 mx-auto">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">일정 관리</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           모든 환자의 검사 및 주사 일정을 관리합니다
         </p>
       </div>
@@ -157,7 +157,7 @@ export default function SchedulesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -249,12 +249,12 @@ export default function SchedulesPage() {
                         key={schedule.id}
                         className={`${schedule.is_completed ? 'opacity-60' : ''} ${overdue ? 'border-red-200' : ''}`}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
+                        <CardContent className="p-3 md:p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h4 
-                                  className="font-semibold cursor-pointer hover:text-blue-600"
+                                  className="font-semibold text-sm md:text-base cursor-pointer hover:text-blue-600"
                                   onClick={() => router.push(`/patients/${schedule.patient.id}`)}
                                 >
                                   {schedule.patient.name}
@@ -269,14 +269,14 @@ export default function SchedulesPage() {
                                   {schedule.item.category === 'test' ? '검사' : '주사'}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground">
                                 <span>{schedule.item.name}</span>
                                 <span>
                                   {schedule.item.cycle_value}
                                   {schedule.item.cycle_unit === 'weeks' ? '주' : '개월'} 주기
                                 </span>
                                 {schedule.patient.phone && (
-                                  <span>연락처: {schedule.patient.phone}</span>
+                                  <span className="truncate">연락처: {schedule.patient.phone}</span>
                                 )}
                               </div>
                             </div>

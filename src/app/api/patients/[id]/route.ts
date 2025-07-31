@@ -33,18 +33,18 @@ export async function GET(
 
     const supabase = await createPureClient();
     
-    // Get patient with active schedules and items
+    // Get patient with active schedules and items (if any)
     const { data: patient, error } = await supabase
       .from('patients')
       .select(`
         *,
-        patient_schedules!inner (
+        patient_schedules!left (
           *,
           items (*)
         )
       `)
       .eq('id', id)
-      .eq('patient_schedules.is_active', true)
+      .or('patient_schedules.is_active.eq.true,patient_schedules.id.is.null')
       .single();
     
     if (error) {

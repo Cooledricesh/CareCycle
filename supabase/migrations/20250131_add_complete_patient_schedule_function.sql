@@ -48,13 +48,23 @@ BEGIN
     RAISE EXCEPTION 'Active patient schedule not found for patient_id: % and schedule_id: %', p_patient_id, p_schedule_id;
   END IF;
   
+  -- Validate cycle_unit before processing
+  IF v_item_record.cycle_unit IS NULL THEN
+    RAISE EXCEPTION 'cycle_unit cannot be null for item_id: %', v_item_record.id;
+  END IF;
+  
+  IF v_item_record.cycle_unit NOT IN ('weeks', 'months') THEN
+    RAISE EXCEPTION 'Invalid cycle_unit: %. Allowed values are: weeks, months', v_item_record.cycle_unit;
+  END IF;
+  
   -- Calculate next due date based on item cycle
   IF v_item_record.cycle_unit = 'weeks' THEN
     v_next_due_date := p_actual_implementation_date + INTERVAL '1 week' * v_item_record.cycle_value;
   ELSIF v_item_record.cycle_unit = 'months' THEN
     v_next_due_date := p_actual_implementation_date + INTERVAL '1 month' * v_item_record.cycle_value;
   ELSE
-    RAISE EXCEPTION 'Invalid cycle_unit: %', v_item_record.cycle_unit;
+    -- This should never be reached due to validation above, but kept for defensive programming
+    RAISE EXCEPTION 'Unexpected cycle_unit: %', v_item_record.cycle_unit;
   END IF;
   
   -- Use provided scheduled_date or current next_due_date

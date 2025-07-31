@@ -137,26 +137,26 @@ export default function HomePage() {
   }, [loading, loadingMessages.length]);
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="container px-4 py-4 md:py-8 mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 md:mb-8">
         <div className="animate-fade-in">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="flex items-center gap-2 md:gap-3 mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               CareCycle
             </h1>
-            <Sparkles className="h-6 w-6 text-purple-500 animate-pulse" />
+            <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-500 animate-pulse" />
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground">
             정신건강의학과 검사·주사 일정 관리 시스템
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <div className="text-sm text-blue-600 font-medium flex items-center gap-1">
+            <div className="text-xs md:text-sm text-blue-600 font-medium flex items-center gap-1">
               {(() => {
                 const greeting = getGreeting();
                 const Icon = greeting.icon;
                 return (
                   <>
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3 w-3 md:h-4 md:w-4" />
                     {greeting.message}
                   </>
                 );
@@ -166,7 +166,7 @@ export default function HomePage() {
         </div>
         <Button 
           onClick={() => router.push('/patients/new')}
-          className="hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+          className="w-full md:w-auto hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           <Plus className="h-4 w-4 mr-2" />
           신규 환자 등록
@@ -177,7 +177,7 @@ export default function HomePage() {
       <QuickSearch />
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3 mb-8">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3 mb-6 md:mb-8">
         <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">오늘의 전체 일정</CardTitle>
@@ -185,7 +185,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold animate-count-up">{summary.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">건의 일정이 있어요</p>
+            <p className="text-xs text-muted-foreground mt-1 hidden sm:block">건의 일정이 있어요</p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 group">
@@ -218,7 +218,7 @@ export default function HomePage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid gap-4 md:grid-cols-2 mb-8">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 mb-6 md:mb-8">
         <Card 
           className="cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group active:scale-95"
           onClick={() => router.push('/patients')}
@@ -305,13 +305,13 @@ export default function HomePage() {
                   }`}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-semibold text-gray-900 flex items-center gap-1">
+                          <h4 className="font-semibold text-gray-900 flex items-center gap-1 text-sm md:text-base">
                             {schedule.is_completed && (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 text-green-500" />
                             )}
                             {schedule.patient.name}
                           </h4>
@@ -339,7 +339,7 @@ export default function HomePage() {
                           </span>
                         </p>
                         {schedule.patient.phone && (
-                          <p className="text-sm text-blue-600 flex items-center gap-1">
+                          <p className="text-xs md:text-sm text-blue-600 flex items-center gap-1">
                             📞 {schedule.patient.phone}
                           </p>
                         )}

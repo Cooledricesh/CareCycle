@@ -18,6 +18,68 @@ interface NotificationRequest {
   date?: string;
 }
 
+// Type definitions for the database response
+interface Patient {
+  id: string;
+  patient_number: string;
+  name: string;
+  phone: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Item {
+  id: string;
+  name: string;
+  category: 'test' | 'injection';
+  cycle_value: number;
+  cycle_unit: 'weeks' | 'months';
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PatientSchedule {
+  id: string;
+  patient_id: string;
+  item_id: string;
+  first_implementation_date: string;
+  next_due_date: string;
+  last_implementation_date: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  patients: Patient;
+  items: Item;
+}
+
+interface ScheduleHistory {
+  id: string;
+  patient_schedule_id: string;
+  scheduled_date: string;
+  actual_implementation_date: string | null;
+  is_completed: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  patient_schedules: PatientSchedule;
+}
+
+// Type for the accumulator in reduce
+interface PatientScheduleGroup {
+  patient: Patient;
+  schedules: Array<{
+    item: Item;
+    scheduled_date: string;
+    is_overdue: boolean;
+  }>;
+}
+
+interface PatientSchedulesMap {
+  [patientId: string]: PatientScheduleGroup;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,7 +87,92 @@ serve(async (req) => {
   }
 
   try {
-    const { type, patientId, date } = await req.json() as NotificationRequest;
+    // Parse request body
+    let body: any;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Validate required fields
+    const { type, patientId, date } = body as NotificationRequest;
+
+    // Check if type is provided and valid
+    if (!type) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: type' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (!['daily', 'reminder', 'overdue'].includes(type)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid type. Must be one of: daily, reminder, overdue' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Validate patientId if provided
+    if (patientId !== undefined && typeof patientId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid patientId. Must be a string' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Validate date if provided
+    if (date !== undefined) {
+      if (typeof date !== 'string') {
+        return new Response(
+          JSON.stringify({ error: 'Invalid date. Must be a string' }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      // Check if date is in valid format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid date format. Must be YYYY-MM-DD' }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      // Check if date is a valid date
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid date value' }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    }
+
     const targetDate = date || new Date().toISOString().split('T')[0];
 
     // Fetch schedules based on notification type
@@ -74,7 +221,7 @@ serve(async (req) => {
     }
 
     // Group schedules by patient
-    const patientSchedules = schedules.reduce((acc: any, schedule: any) => {
+    const patientSchedules = schedules.reduce((acc: PatientSchedulesMap, schedule: ScheduleHistory) => {
       const patientId = schedule.patient_schedules.patients.id;
       if (!acc[patientId]) {
         acc[patientId] = {
@@ -88,15 +235,15 @@ serve(async (req) => {
         is_overdue: new Date(schedule.scheduled_date) < new Date(targetDate)
       });
       return acc;
-    }, {});
+    }, {} as PatientSchedulesMap);
 
     // Send emails using Resend
-    const emailPromises = Object.values(patientSchedules).map(async (data: any) => {
+    const emailPromises = Object.values(patientSchedules).map(async (data: PatientScheduleGroup) => {
       const subject = type === 'overdue' 
         ? `[CareCycle] 지연된 검사/주사 일정 알림`
         : `[CareCycle] 예정된 검사/주사 일정 알림`;
 
-      const scheduleList = data.schedules.map((schedule: any) => 
+      const scheduleList = data.schedules.map((schedule) => 
         `- ${schedule.item.name} (${schedule.item.cycle_value}${schedule.item.cycle_unit === 'weeks' ? '주' : '개월'} 주기) - ${schedule.scheduled_date}${schedule.is_overdue ? ' [지연됨]' : ''}`
       ).join('\n');
 
@@ -151,9 +298,9 @@ CareCycle 팀 드림
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'An unexpected error occurred' }),
       { 
-        status: 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

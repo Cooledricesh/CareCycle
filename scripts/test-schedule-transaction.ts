@@ -124,6 +124,57 @@ async function testTransactionSupport() {
 
     console.log('Transaction support testing completed!');
 
+    // Cleanup: Remove test data
+    console.log('\nCleaning up test data...');
+    try {
+      // Delete test history entries created during the test
+      if (result1?.history_entry?.id) {
+        const { error: deleteHistoryError } = await supabase
+          .from('schedule_history')
+          .delete()
+          .eq('id', result1.history_entry.id);
+        
+        if (deleteHistoryError) {
+          console.error('Failed to delete test history entry:', deleteHistoryError.message);
+        } else {
+          console.log('✅ Deleted test completion history entry');
+        }
+      }
+
+      if (result1?.next_history_id) {
+        const { error: deleteNextHistoryError } = await supabase
+          .from('schedule_history')
+          .delete()
+          .eq('id', result1.next_history_id);
+        
+        if (deleteNextHistoryError) {
+          console.error('Failed to delete next history entry:', deleteNextHistoryError.message);
+        } else {
+          console.log('✅ Deleted next scheduled history entry');
+        }
+      }
+
+      // Reset the schedule to its original state
+      const { error: resetScheduleError } = await supabase
+        .from('patient_schedules')
+        .update({
+          last_implementation_date: schedule.last_implementation_date,
+          next_due_date: schedule.next_due_date
+        })
+        .eq('id', schedule.id);
+
+      if (resetScheduleError) {
+        console.error('Failed to reset schedule:', resetScheduleError.message);
+      } else {
+        console.log('✅ Reset schedule to original state');
+      }
+
+      console.log('\nCleanup completed successfully!');
+    } catch (cleanupError) {
+      console.error('Cleanup failed:', cleanupError);
+      console.log('\n⚠️  Manual cleanup may be required for schedule ID:', schedule.id);
+    }
+
   } catch (error) {
     console.error('Test script error:', error);
   }
