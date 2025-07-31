@@ -45,15 +45,18 @@ export default function PatientsPage() {
   );
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container px-4 py-4 md:py-8 mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">환자 관리</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">환자 관리</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             등록된 환자 목록을 확인하고 관리합니다.
           </p>
         </div>
-        <Button onClick={() => router.push('/patients/new')}>
+        <Button 
+          onClick={() => router.push('/patients/new')}
+          className="w-full md:w-auto"
+        >
           <Plus className="h-4 w-4 mr-2" />
           신규 환자 등록
         </Button>
@@ -67,7 +70,7 @@ export default function PatientsPage() {
               placeholder="이름 또는 환자 번호로 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
+              className="w-full md:max-w-sm"
             />
           </div>
         </CardHeader>
@@ -84,27 +87,27 @@ export default function PatientsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3 md:gap-4">
               {filteredPatients.map((patient) => (
                 <Card
                   key={patient.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => router.push(`/patients/${patient.id}`)}
                 >
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div>
-                      <h3 className="font-semibold">{patient.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                  <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 md:p-4">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-sm md:text-base">{patient.name}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">
                         환자 번호: {patient.patient_number}
                       </p>
                       {patient.phone && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           연락처: {patient.phone}
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs md:text-sm text-muted-foreground">
                         등록일: {new Date(patient.created_at).toLocaleDateString('ko-KR')}
                       </p>
                     </div>

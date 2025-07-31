@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPureClient } from '@/lib/supabase/server';
-import { calculateNextDueDate } from '@/lib/utils/schedule';
+import { calculateNextDueDate, isValidCycleUnit } from '@/lib/utils/schedule';
 import { z } from 'zod';
 
 // Request validation schema
@@ -91,11 +91,16 @@ export async function POST(request: NextRequest) {
         throw new Error(`Item ${schedule.item_id} not found`);
       }
       
+      // Validate cycle_unit before using it
+      if (!isValidCycleUnit(item.cycle_unit)) {
+        throw new Error(`유효하지 않은 주기 단위입니다: ${item.cycle_unit}. 'weeks' 또는 'months'만 허용됩니다.`);
+      }
+      
       const firstImplementationDate = new Date(schedule.first_implementation_date);
       const nextDueDate = calculateNextDueDate({
         startDate: firstImplementationDate,
         cycleValue: item.cycle_value,
-        cycleUnit: item.cycle_unit as 'weeks' | 'months',
+        cycleUnit: item.cycle_unit,
       });
       
       return {
