@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GET } from './route';
 import { NextRequest } from 'next/server';
 
@@ -21,6 +21,42 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 describe('/api/schedules GET', () => {
+  describe("Mock State Management", () => {
+    it("should properly reset mock state between tests", async () => {
+      // First call with success
+      mockQuery.data = mockScheduleData;
+      mockQuery.error = null;
+
+      let request = new NextRequest("http://localhost:3000/api/schedules");
+      let response = await GET(request);
+      let data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.schedules).toHaveLength(2);
+
+      // Reset to error state
+      mockQuery.data = null;
+      mockQuery.error = { message: "New error" };
+
+      request = new NextRequest("http://localhost:3000/api/schedules");
+      response = await GET(request);
+      data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe("Failed to fetch schedules");
+    });
+
+    it("should verify mock call counts and arguments", async () => {
+      mockQuery.data = mockScheduleData;
+      mockQuery.error = null;
+
+      const request = new NextRequest("http://localhost:3000/api/schedules?category=test");
+      await GET(request);
+
+      expect(mockSupabaseClient.from).toHaveBeenCalledTimes(1);
+      expect(mockSupabaseClient.from).toHaveBeenCalledWith("schedule_history");
+    });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -239,6 +275,54 @@ describe('/api/schedules GET', () => {
   });
 
   describe('Query Parameter Edge Cases', () => {
+    it("should handle multiple query parameters", async () => {
+      mockQuery.data = mockScheduleData;
+      mockQuery.error = null;
+
+      const request = new NextRequest("http://localhost:3000/api/schedules?category=test&patient=P001");
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.schedules).toHaveLength(1);
+      expect(data.schedules[0].item.category).toBe("test");
+      expect(data.schedules[0].patient.patient_number).toBe("P001");
+    });
+
+    it("should handle empty query parameter values", async () => {
+      mockQuery.data = mockScheduleData;
+      mockQuery.error = null;
+
+      const request = new NextRequest("http://localhost:3000/api/schedules?category=");
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.schedules).toHaveLength(2);
+    });
+
+    it("should handle malformed query parameters", async () => {
+      mockQuery.data = mockScheduleData;
+      mockQuery.error = null;
+
+      const request = new NextRequest("http://localhost:3000/api/schedules?category=%20&invalid=");
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+    });
+
+    it("should handle special characters in category filter", async () => {
+      mockQuery.data = mockScheduleData;
+      mockQuery.error = null;
+
+      const request = new NextRequest("http://localhost:3000/api/schedules?category=test%20special");
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.schedules).toHaveLength(0);
+    });
     it('should handle unknown category values', async () => {
       mockQuery.data = mockScheduleData;
       mockQuery.error = null;

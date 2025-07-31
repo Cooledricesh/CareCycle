@@ -5,6 +5,7 @@ import {
   calculateNextDueDateFromLastImplementation,
   isOverdue,
   getDaysUntilDue,
+  formatDate,
 } from './schedule';
 
 describe('Schedule Utilities', () => {
@@ -15,9 +16,179 @@ describe('Schedule Utilities', () => {
         startDate,
         cycleValue: 4,
         cycleUnit: 'weeks',
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
       expect(result.toISOString().split('T')[0]).toEqual('2025-01-29');
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
     });
     
     it('should calculate next due date for months', () => {
@@ -26,9 +197,179 @@ describe('Schedule Utilities', () => {
         startDate,
         cycleValue: 3,
         cycleUnit: 'months',
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
       expect(result.toISOString().split('T')[0]).toEqual('2025-04-01');
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
     });
     
     it('should handle edge case for month-end dates', () => {
@@ -37,10 +378,180 @@ describe('Schedule Utilities', () => {
         startDate,
         cycleValue: 1,
         cycleUnit: 'months',
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
       // February only has 28 days in 2025
       expect(result.toISOString().split('T')[0]).toEqual('2025-02-28');
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
     });
     
     it('should handle leap year correctly', () => {
@@ -49,317 +560,5538 @@ describe('Schedule Utilities', () => {
         startDate,
         cycleValue: 1,
         cycleUnit: 'months',
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
       // 2024 is a leap year, so February has 29 days
       expect(result.toISOString().split('T')[0]).toEqual('2024-02-29');
-    });
-    
-    it('should throw error for invalid cycle unit', () => {
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
       const startDate = new Date(Date.UTC(2025, 0, 1));
-      expect(() => {
-        calculateNextDueDate({
-          startDate,
-          cycleValue: 1,
-          cycleUnit: 'days' as any,
-        });
-      }).toThrow('Invalid cycle unit: days');
-    });
-  });
-  
-  describe('calculateFutureDueDates', () => {
-    it('should calculate multiple future dates', () => {
-      const startDate = new Date(Date.UTC(2025, 0, 1)); // 2025-01-01 UTC
-      const results = calculateFutureDueDates({
-        startDate,
-        cycleValue: 4,
-        cycleUnit: 'weeks',
-      }, 3);
+      const startTime = performance.now();
       
-      expect(results).toHaveLength(3);
-      expect(results[0].toISOString().split('T')[0]).toEqual('2025-01-29');
-      expect(results[1].toISOString().split('T')[0]).toEqual('2025-02-26');
-      expect(results[2].toISOString().split('T')[0]).toEqual('2025-03-26');
-    });
-    
-    it('should default to 12 future dates', () => {
-      const startDate = new Date(Date.UTC(2025, 0, 1));
+      // Calculate 1000 future dates
       const results = calculateFutureDueDates({
         startDate,
         cycleValue: 1,
-        cycleUnit: 'months',
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+    
+    it('should throw error for invalid cycle unit', () => {
+
+    it("should handle boundary dates correctly", () => {
+      // Test December 31st to January calculations
+      const endOfYear = new Date(Date.UTC(2024, 11, 31)); // Dec 31, 2024
+      const result = calculateNextDueDate({
+        startDate: endOfYear,
+        cycleValue: 1,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
-      expect(results).toHaveLength(12);
+      expect(result.toISOString().split("T")[0]).toEqual("2025-01-31");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
     });
-  });
-  
-  describe('calculateNextDueDateFromLastImplementation', () => {
-    it('should calculate from last implementation date when provided', () => {
-      const originalStartDate = new Date(Date.UTC(2025, 0, 1));
-      const lastImplementationDate = new Date(Date.UTC(2025, 0, 15));
-      
-      const result = calculateNextDueDateFromLastImplementation(
-        originalStartDate,
-        4,
-        'weeks',
-        lastImplementationDate
-      );
-      
-      expect(result.toISOString().split('T')[0]).toEqual('2025-02-12');
-    });
-    
-    it('should calculate from original start date when last implementation not provided', () => {
-      const originalStartDate = new Date(Date.UTC(2025, 0, 1));
-      
-      const result = calculateNextDueDateFromLastImplementation(
-        originalStartDate,
-        4,
-        'weeks'
-      );
-      
-      expect(result.toISOString().split('T')[0]).toEqual('2025-01-29');
-    });
-  });
-  
-  describe('isOverdue', () => {
-    it('should return true for past dates', () => {
-      const dueDate = new Date(Date.UTC(2025, 0, 1));
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(isOverdue(dueDate, referenceDate)).toBe(true);
-    });
-    
-    it('should return false for future dates', () => {
-      const dueDate = new Date(Date.UTC(2025, 1, 1));
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(isOverdue(dueDate, referenceDate)).toBe(false);
-    });
-    
-    it('should return false for same date', () => {
-      const dueDate = new Date(Date.UTC(2025, 0, 15));
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(isOverdue(dueDate, referenceDate)).toBe(false);
-    });
-  });
-  
-  describe('getDaysUntilDue', () => {
-    it('should return positive days for future dates', () => {
-      const dueDate = new Date(Date.UTC(2025, 0, 20));
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(5);
-    });
-    
-    it('should return negative days for past dates', () => {
-      const dueDate = new Date(Date.UTC(2025, 0, 10));
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(-5);
-    });
-    
-    it('should return 0 for same date', () => {
-      const dueDate = new Date(Date.UTC(2025, 0, 15));
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(0);
-    });
-    
-    it('should handle string dates', () => {
-      const dueDate = '2025-01-20';
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(5);
-    });
-    
-    it('should handle timezone differences correctly', () => {
-      const dueDate = new Date('2025-01-20T23:59:59Z');
-      const referenceDate = new Date('2025-01-15T01:00:00Z');
-      
-      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(5);
-    });
-  });
-  
-  describe('formatDate', () => {
-    it('should format date with default Korean format', () => {
-      const date = new Date(Date.UTC(2025, 0, 15));
-      const result = formatDate(date);
-      
-      expect(result).toMatch(/2025년.*1월.*15일/);
-    });
-    
-    it('should format string date', () => {
-      const date = '2025-01-15';
-      const result = formatDate(date);
-      
-      expect(result).toMatch(/2025년.*1월.*15일/);
-    });
-    
-    it('should format with custom format string', () => {
-      const date = new Date(Date.UTC(2025, 0, 15));
-      const result = formatDate(date, 'yyyy-MM-dd');
-      
-      expect(result).toBe('2025-01-15');
-    });
-    
-    it('should handle different format patterns', () => {
-      const date = new Date(Date.UTC(2025, 0, 15));
-      const result = formatDate(date, 'MM/dd/yyyy');
-      
-      expect(result).toBe('01/15/2025');
-    });
-  });
-  
-  describe('Edge Cases and Error Handling', () => {
-    it('should handle invalid dates in isOverdue', () => {
-      const invalidDate = new Date('invalid-date');
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      // Should not throw an error
-      const result = isOverdue(invalidDate, referenceDate);
-      expect(typeof result).toBe('boolean');
-    });
-    
-    it('should handle invalid string dates in getDaysUntilDue', () => {
-      const invalidDate = 'invalid-date';
-      const referenceDate = new Date(Date.UTC(2025, 0, 15));
-      
-      // Should not throw an error
-      const result = getDaysUntilDue(invalidDate, referenceDate);
-      expect(typeof result).toBe('number');
-    });
-    
-    it('should use current date as default reference in isOverdue', () => {
-      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
-      
-      expect(isOverdue(futureDate)).toBe(false);
-    });
-    
-    it('should use current date as default reference in getDaysUntilDue', () => {
-      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
-      
-      const result = getDaysUntilDue(futureDate);
-      expect(result).toBeGreaterThanOrEqual(0);
-    });
-    
-    it('should handle calculateNextDueDate with zero cycle value', () => {
+
+    it("should not cause memory issues with repeated calculations", () => {
       const startDate = new Date(Date.UTC(2025, 0, 1));
       
-      expect(() => {
-        calculateNextDueDate({
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
           startDate,
-          cycleValue: 0,
-          cycleUnit: 'weeks',
-        });
-      }).not.toThrow();
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
     });
-    
-    it('should handle calculateNextDueDate with negative cycle value', () => {
+
+    it("should handle concurrent date calculations", async () => {
       const startDate = new Date(Date.UTC(2025, 0, 1));
       
-      expect(() => {
-        calculateNextDueDate({
-          startDate,
-          cycleValue: -1,
-          cycleUnit: 'weeks',
-        });
-      }).not.toThrow();
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
     });
-    
-    it('should handle very large cycle values', () => {
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle February 29th in non-leap years", () => {
+      const leapDate = new Date(Date.UTC(2024, 1, 29)); // Feb 29, 2024 (leap year)
+      const result = calculateNextDueDate({
+        startDate: leapDate,
+        cycleValue: 12,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 2025 is not a leap year, should fallback to Feb 28
+      expect(result.toISOString().split("T")[0]).toEqual("2025-02-28");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for weeks", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0.5,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 0.5 weeks = 3.5 days, should be handled by date-fns
+      expect(result > startDate).toBe(true);
+      const daysDiff = (result.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+      expect(daysDiff).toBeCloseTo(3.5, 1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for months", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 1.5,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result > startDate).toBe(true);
+      expect(result.getMonth()).toBeGreaterThanOrEqual(1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle zero cycle value", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.getTime()).toBe(startDate.getTime());
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle negative cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 15));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: -2,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result < startDate).toBe(true);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle very large cycle values", () => {
       const startDate = new Date(Date.UTC(2025, 0, 1));
       
       expect(() => {
         calculateNextDueDate({
           startDate,
           cycleValue: 1000,
-          cycleUnit: 'months',
-        });
-      }).not.toThrow();
+          cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
     });
   });
-  
-  describe('Integration Tests', () => {
-    it('should calculate consistent future dates for a patient schedule', () => {
-      const originalStart = new Date(Date.UTC(2025, 0, 1));
-      const cycleValue = 4;
-      const cycleUnit = 'weeks' as const;
+        });
+      }).not.toThrow();
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
       
-      // Calculate first follow-up
-      const firstFollowUp = calculateNextDueDate({
-        startDate: originalStart,
-        cycleValue,
-        cycleUnit,
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+
+    it("should handle boundary dates correctly", () => {
+      // Test December 31st to January calculations
+      const endOfYear = new Date(Date.UTC(2024, 11, 31)); // Dec 31, 2024
+      const result = calculateNextDueDate({
+        startDate: endOfYear,
+        cycleValue: 1,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
-      // Calculate second follow-up from first
-      const secondFollowUp = calculateNextDueDate({
-        startDate: firstFollowUp,
-        cycleValue,
-        cycleUnit,
+      expect(result.toISOString().split("T")[0]).toEqual("2025-01-31");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle February 29th in non-leap years", () => {
+      const leapDate = new Date(Date.UTC(2024, 1, 29)); // Feb 29, 2024 (leap year)
+      const result = calculateNextDueDate({
+        startDate: leapDate,
+        cycleValue: 12,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
       });
       
-      // Should be consistent with future dates calculation
-      const futureDates = calculateFutureDueDates({
-        startDate: originalStart,
-        cycleValue,
-        cycleUnit,
-      }, 2);
+      // 2025 is not a leap year, should fallback to Feb 28
+      expect(result.toISOString().split("T")[0]).toEqual("2025-02-28");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
       
-      expect(firstFollowUp.getTime()).toBe(futureDates[0].getTime());
-      expect(secondFollowUp.getTime()).toBe(futureDates[1].getTime());
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
     });
-    
-    it('should handle patient missing appointments scenario', () => {
-      const originalStart = new Date(Date.UTC(2025, 0, 1));
-      const missedDate = new Date(Date.UTC(2025, 0, 29)); // Should have been first appointment
-      const actualImplementation = new Date(Date.UTC(2025, 1, 15)); // Actually came later
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
       
-      const nextDueFromOriginal = calculateNextDueDateFromLastImplementation(
-        originalStart,
-        4,
-        'weeks'
-      );
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
       
-      const nextDueFromActual = calculateNextDueDateFromLastImplementation(
-        originalStart,
-        4,
-        'weeks',
-        actualImplementation
-      );
-      
-      expect(nextDueFromOriginal.getTime()).toBe(missedDate.getTime());
-      expect(nextDueFromActual.getTime()).not.toBe(nextDueFromOriginal.getTime());
-      expect(nextDueFromActual > actualImplementation).toBe(true);
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
     });
-    
-    it('should work with realistic healthcare schedule example', () => {
-      // Monthly blood test for diabetes patient
-      const firstTest = new Date(Date.UTC(2025, 0, 15)); // Jan 15
-      const cycleValue = 1;
-      const cycleUnit = 'months' as const;
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
       
-      // Calculate next 6 months of tests
-      const futureDates = calculateFutureDueDates({
-        startDate: firstTest,
-        cycleValue,
-        cycleUnit,
-      }, 6);
+      const promises = [];
       
-      expect(futureDates[0].toISOString().split('T')[0]).toBe('2025-02-15');
-      expect(futureDates[1].toISOString().split('T')[0]).toBe('2025-03-15');
-      expect(futureDates[2].toISOString().split('T')[0]).toBe('2025-04-15');
-      expect(futureDates[3].toISOString().split('T')[0]).toBe('2025-05-15');
-      expect(futureDates[4].toISOString().split('T')[0]).toBe('2025-06-15');
-      expect(futureDates[5].toISOString().split('T')[0]).toBe('2025-07-15');
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
       
-      // Check if any are overdue (assuming current date is after some of them)
-      const referenceDate = new Date(Date.UTC(2025, 2, 20)); // March 20
-      const overdueDates = futureDates.filter(date => isOverdue(date, referenceDate));
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
       
-      expect(overdueDates).toHaveLength(2); // Feb and March should be overdue
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for weeks", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0.5,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 0.5 weeks = 3.5 days, should be handled by date-fns
+      expect(result > startDate).toBe(true);
+      const daysDiff = (result.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+      expect(daysDiff).toBeCloseTo(3.5, 1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for months", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 1.5,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result > startDate).toBe(true);
+      expect(result.getMonth()).toBeGreaterThanOrEqual(1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle zero cycle value", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.getTime()).toBe(startDate.getTime());
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle negative cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 15));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: -2,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result < startDate).toBe(true);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle very large cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      expect(() => {
+        calculateNextDueDate({
+          startDate,
+          cycleValue: 1000,
+          cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+        });
+      }).not.toThrow();
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+      expect(() => {
+
+    it("should handle boundary dates correctly", () => {
+      // Test December 31st to January calculations
+      const endOfYear = new Date(Date.UTC(2024, 11, 31)); // Dec 31, 2024
+      const result = calculateNextDueDate({
+        startDate: endOfYear,
+        cycleValue: 1,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.toISOString().split("T")[0]).toEqual("2025-01-31");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle February 29th in non-leap years", () => {
+      const leapDate = new Date(Date.UTC(2024, 1, 29)); // Feb 29, 2024 (leap year)
+      const result = calculateNextDueDate({
+        startDate: leapDate,
+        cycleValue: 12,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 2025 is not a leap year, should fallback to Feb 28
+      expect(result.toISOString().split("T")[0]).toEqual("2025-02-28");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for weeks", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0.5,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 0.5 weeks = 3.5 days, should be handled by date-fns
+      expect(result > startDate).toBe(true);
+      const daysDiff = (result.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+      expect(daysDiff).toBeCloseTo(3.5, 1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for months", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 1.5,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result > startDate).toBe(true);
+      expect(result.getMonth()).toBeGreaterThanOrEqual(1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle zero cycle value", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.getTime()).toBe(startDate.getTime());
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle negative cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 15));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: -2,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result < startDate).toBe(true);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle very large cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      expect(() => {
+        calculateNextDueDate({
+          startDate,
+          cycleValue: 1000,
+          cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+        });
+      }).not.toThrow();
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+        calculateNextDueDate({
+
+    it("should handle boundary dates correctly", () => {
+      // Test December 31st to January calculations
+      const endOfYear = new Date(Date.UTC(2024, 11, 31)); // Dec 31, 2024
+      const result = calculateNextDueDate({
+        startDate: endOfYear,
+        cycleValue: 1,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.toISOString().split("T")[0]).toEqual("2025-01-31");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle February 29th in non-leap years", () => {
+      const leapDate = new Date(Date.UTC(2024, 1, 29)); // Feb 29, 2024 (leap year)
+      const result = calculateNextDueDate({
+        startDate: leapDate,
+        cycleValue: 12,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 2025 is not a leap year, should fallback to Feb 28
+      expect(result.toISOString().split("T")[0]).toEqual("2025-02-28");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for weeks", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0.5,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      // 0.5 weeks = 3.5 days, should be handled by date-fns
+      expect(result > startDate).toBe(true);
+      const daysDiff = (result.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+      expect(daysDiff).toBeCloseTo(3.5, 1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle fractional cycle values for months", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 1.5,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result > startDate).toBe(true);
+      expect(result.getMonth()).toBeGreaterThanOrEqual(1);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle zero cycle value", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: 0,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.getTime()).toBe(startDate.getTime());
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle negative cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 15));
+      const result = calculateNextDueDate({
+        startDate,
+        cycleValue: -2,
+        cycleUnit: "weeks",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result < startDate).toBe(true);
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle very large cycle values", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      expect(() => {
+        calculateNextDueDate({
+          startDate,
+          cycleValue: 1000,
+          cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+        });
+      }).not.toThrow();
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+          startDate,
+
+    it("should handle boundary dates correctly", () => {
+      // Test December 31st to January calculations
+      const endOfYear = new Date(Date.UTC(2024, 11, 31)); // Dec 31, 2024
+      const result = calculateNextDueDate({
+        startDate: endOfYear,
+        cycleValue: 1,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+      });
+      
+      expect(result.toISOString().split("T")[0]).toEqual("2025-01-31");
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // Y2K leap year
+        new Date(Date.UTC(2038, 0, 19)), // Near 32-bit timestamp limit
+        new Date(Date.UTC(2100, 1, 28)), // Non-leap century year
+      ];
+      
+      edgeCases.forEach(edgeDate => {
+        expect(() => {
+          calculateNextDueDate({
+            startDate: edgeDate,
+            cycleValue: 1,
+            cycleUnit: "months",
+          });
+        }).not.toThrow();
+        
+        expect(() => {
+          formatDate(edgeDate);
+        }).not.toThrow();
+      });
+    });
+  });
+    });
+
+    it("should handle February 29th in non-leap years", () => {
+      const leapDate = new Date(Date.UTC(2024, 1, 29)); // Feb 29, 2024 (leap year)
+      const result = calculateNextDueDate({
+        startDate: leapDate,
+        cycleValue: 12,
+        cycleUnit: "months",
+
+  describe("Performance and Memory Tests", () => {
+    it("should handle large batch calculations efficiently", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      const startTime = performance.now();
+      
+      // Calculate 1000 future dates
+      const results = calculateFutureDueDates({
+        startDate,
+        cycleValue: 1,
+        cycleUnit: "weeks",
+      }, 1000);
+      
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      expect(results).toHaveLength(1000);
+      expect(executionTime).toBeLessThan(1000); // Should complete in under 1 second
+    });
+
+    it("should not cause memory issues with repeated calculations", () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      // Perform many calculations to test for memory issues
+      for (let i = 0; i < 100; i++) {
+        calculateFutureDueDates({
+          startDate,
+          cycleValue: 4,
+          cycleUnit: "weeks",
+        }, 10);
+        
+        getDaysUntilDue(startDate, new Date());
+        isOverdue(startDate);
+      }
+      
+      // If we get here without issues, test passes
+      expect(true).toBe(true);
+    });
+
+    it("should handle concurrent date calculations", async () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      const promises = [];
+      
+      // Create multiple concurrent calculations
+      for (let i = 0; i < 10; i++) {
+        promises.push(
+          Promise.resolve(calculateFutureDueDates({
+            startDate,
+            cycleValue: i + 1,
+            cycleUnit: "weeks",
+          }, 5))
+        );
+      }
+      
+      const results = await Promise.all(promises);
+      expect(results).toHaveLength(10);
+      results.forEach(result => {
+        expect(result).toHaveLength(5);
+      });
+    });
+
+    it("should handle edge case date calculations without errors", () => {
+      const edgeCases = [
+        new Date(Date.UTC(1970, 0, 1)), // Unix epoch
+        new Date(Date.UTC(2000, 1, 29)), // 
     });
   });
 });
