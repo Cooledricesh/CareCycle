@@ -10,6 +10,7 @@ import {
   Activity,
   Settings
 } from 'lucide-react';
+import { NotificationBadge } from '@/components/notifications/notification-badge';
 
 const navItems = [
   {
@@ -72,8 +73,10 @@ export function NavigationBar() {
             </div>
           </div>
 
-          {/* Mobile: Empty space for symmetry */}
-          <div className="md:hidden w-10" />
+          {/* Notification Badge */}
+          <div className="flex items-center">
+            <NotificationBadge />
+          </div>
         </div>
 
       </div>
