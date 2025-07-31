@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { 
   CalendarDays, 
@@ -37,12 +36,6 @@ const navItems = [
 
 export function NavigationBar() {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
 
   return (
     <nav className="border-b bg-white sticky top-0 z-50 md:static">

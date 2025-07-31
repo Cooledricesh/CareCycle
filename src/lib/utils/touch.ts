@@ -67,7 +67,10 @@ export function useLongPress(callback: () => void, delay = 500) {
   };
 
   const clear = () => {
-    timeoutRef.current && clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   };
 
   useEffect(() => {

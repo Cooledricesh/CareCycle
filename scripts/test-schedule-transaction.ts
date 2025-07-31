@@ -3,10 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 // Test script to verify transaction support in schedule completion
 // This script will test the atomic nature of the complete_patient_schedule function
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Check for required environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl) {
+  throw new Error('NEXT_PUBLIC_SUPABASE_URL is not defined. Please check your .env.local file.');
+}
+
+if (!supabasePublishableKey) {
+  throw new Error('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is not defined. Please check your .env.local file.');
+}
+
+const supabase = createClient(supabaseUrl, supabasePublishableKey);
 
 async function testTransactionSupport() {
   console.log('Testing transaction support for schedule completion...\n');

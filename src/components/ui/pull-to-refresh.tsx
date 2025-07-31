@@ -30,9 +30,16 @@ export function PullToRefresh({ onRefresh, children, threshold = 80 }: PullToRef
     
     // Only pull down when at the top of the scroll
     if (containerRef.current.scrollTop === 0 && diff > 0) {
-      e.preventDefault();
-      setIsPulling(true);
-      setPullDistance(Math.min(diff, threshold * 1.5));
+      // Only prevent default if we're already pulling or the gesture is significant enough
+      if (isPulling || diff > 10) {
+        e.preventDefault();
+        setIsPulling(true);
+        setPullDistance(Math.min(diff, threshold * 1.5));
+      }
+    } else if (isPulling && diff <= 0) {
+      // Reset if user scrolls back up
+      setIsPulling(false);
+      setPullDistance(0);
     }
   };
 
