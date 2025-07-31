@@ -142,9 +142,6 @@ export function NotificationSettings() {
           </div>
         </div>
 
-        <div className="mt-4 text-xs text-muted-foreground">
-          마지막 알림 전송: {format(new Date(), 'PPP p', { locale: ko })}
-        </div>
       </CardContent>
     </Card>
   );
