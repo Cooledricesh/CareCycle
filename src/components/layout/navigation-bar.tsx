@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { 
   CalendarDays, 
@@ -36,6 +37,7 @@ const navItems = [
 
 export function NavigationBar() {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <nav className="border-b bg-white sticky top-0 z-50">
@@ -78,6 +80,7 @@ export function NavigationBar() {
               type="button"
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
               aria-label="메뉴"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               <svg
                 className="h-6 w-6"
@@ -97,31 +100,34 @@ export function NavigationBar() {
         </div>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden border-t">
-          <div className="flex justify-around py-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href || 
-                (item.href !== '/' && pathname.startsWith(item.href));
-              
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex flex-col items-center px-3 py-2 text-xs',
-                    isActive
-                      ? 'text-blue-700'
-                      : 'text-gray-600'
-                  )}
-                >
-                  <Icon className="h-5 w-5 mb-1" />
-                  <span>{item.title}</span>
-                </Link>
-              );
-            })}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t">
+            <div className="flex justify-around py-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || 
+                  (item.href !== '/' && pathname.startsWith(item.href));
+                
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex flex-col items-center px-3 py-2 text-xs',
+                      isActive
+                        ? 'text-blue-700'
+                        : 'text-gray-600'
+                    )}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon className="h-5 w-5 mb-1" />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );

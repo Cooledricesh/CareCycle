@@ -5,6 +5,48 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+// Type definitions for history entries
+interface Item {
+  id: string;
+  name: string;
+  category: string;
+}
+
+interface PatientSchedule {
+  patient_id: string;
+  items: Item;
+}
+
+interface HistoryEntry {
+  id: string;
+  scheduled_date: string;
+  is_completed: boolean;
+  completed_at?: string | null;
+  notes?: string | null;
+  patient_schedules: PatientSchedule;
+  [key: string]: any; // For any additional fields from the database
+}
+
+interface Statistics {
+  total: number;
+  completed: number;
+  pending: number;
+  completion_rate: number;
+}
+
+// Grouped data types
+interface ItemGroupedData {
+  item: Item;
+  entries: HistoryEntry[];
+  statistics: Statistics;
+}
+
+interface PeriodGroupedData {
+  period: string;
+  entries: HistoryEntry[];
+  statistics: Statistics;
+}
+
 // GET: 환자의 전체 일정 히스토리 조회
 export async function GET(
   request: NextRequest,
@@ -82,9 +124,9 @@ export async function GET(
       query = query.lte('scheduled_date', endDate);
     }
     
-    // Apply pagination
+    // Apply pagination - fetch one extra record to determine if there are more
     if (limit) {
-      query = query.range(offset, offset + limit - 1);
+      query = query.range(offset, offset + limit);
     }
     
     const { data: history, error: historyError } = await query;
@@ -97,31 +139,37 @@ export async function GET(
       );
     }
     
-    // Calculate overall statistics
-    const totalEntries = history?.length || 0;
-    const completedEntries = history?.filter(h => h.is_completed).length || 0;
+    // Check if there are more records
+    const hasMore = (history?.length || 0) > limit;
+    
+    // Trim the extra record if we fetched one
+    const trimmedHistory = hasMore && history ? history.slice(0, limit) : (history || []);
+    
+    // Calculate overall statistics using trimmed data
+    const totalEntries = trimmedHistory.length;
+    const completedEntries = trimmedHistory.filter(h => h.is_completed).length;
     const pendingEntries = totalEntries - completedEntries;
     const completionRate = totalEntries > 0 ? (completedEntries / totalEntries) * 100 : 0;
     
     // Group data if requested
     let groupedData = null;
-    if (groupBy && history) {
+    if (groupBy && trimmedHistory.length > 0) {
       switch (groupBy) {
         case 'item':
-          groupedData = groupByItem(history);
+          groupedData = groupByItem(trimmedHistory);
           break;
         case 'month':
-          groupedData = groupByMonth(history);
+          groupedData = groupByMonth(trimmedHistory);
           break;
         case 'year':
-          groupedData = groupByYear(history);
+          groupedData = groupByYear(trimmedHistory);
           break;
       }
     }
     
     return NextResponse.json({
       patient,
-      history: history || [],
+      history: trimmedHistory,
       statistics: {
         total: totalEntries,
         completed: completedEntries,
@@ -132,7 +180,7 @@ export async function GET(
       pagination: {
         limit,
         offset,
-        has_more: totalEntries === limit, // Simple check; in production, you'd do a separate count query
+        has_more: hasMore,
       }
     });
   } catch (error) {
@@ -145,8 +193,8 @@ export async function GET(
 }
 
 // Helper function to group by item
-function groupByItem(history: any[]) {
-  const grouped = history.reduce((acc, entry) => {
+function groupByItem(history: HistoryEntry[]): ItemGroupedData[] {
+  const grouped = history.reduce<Record<string, ItemGroupedData>>((acc, entry) => {
     const itemId = entry.patient_schedules.items.id;
     const itemName = entry.patient_schedules.items.name;
     const itemCategory = entry.patient_schedules.items.category;
@@ -187,8 +235,8 @@ function groupByItem(history: any[]) {
 }
 
 // Helper function to group by month
-function groupByMonth(history: any[]) {
-  const grouped = history.reduce((acc, entry) => {
+function groupByMonth(history: HistoryEntry[]): PeriodGroupedData[] {
+  const grouped = history.reduce<Record<string, PeriodGroupedData>>((acc, entry) => {
     const date = new Date(entry.scheduled_date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
@@ -220,12 +268,12 @@ function groupByMonth(history: any[]) {
     return acc;
   }, {});
   
-  return Object.values(grouped).sort((a: any, b: any) => b.period.localeCompare(a.period));
+  return Object.values(grouped).sort((a, b) => b.period.localeCompare(a.period));
 }
 
 // Helper function to group by year
-function groupByYear(history: any[]) {
-  const grouped = history.reduce((acc, entry) => {
+function groupByYear(history: HistoryEntry[]): PeriodGroupedData[] {
+  const grouped = history.reduce<Record<string, PeriodGroupedData>>((acc, entry) => {
     const year = new Date(entry.scheduled_date).getFullYear().toString();
     
     if (!acc[year]) {
@@ -256,5 +304,5 @@ function groupByYear(history: any[]) {
     return acc;
   }, {});
   
-  return Object.values(grouped).sort((a: any, b: any) => b.period.localeCompare(a.period));
+  return Object.values(grouped).sort((a, b) => b.period.localeCompare(a.period));
 }

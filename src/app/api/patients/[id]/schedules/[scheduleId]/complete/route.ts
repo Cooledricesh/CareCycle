@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPureClient } from '@/lib/supabase/server';
-import { calculateNextDueDate } from '@/lib/utils/schedule';
 import { z } from 'zod';
 
 // Complete schedule schema
@@ -52,137 +51,53 @@ export async function POST(
     
     const supabase = await createPureClient();
     
-    // Get schedule with item details
-    const { data: schedule, error: scheduleError } = await supabase
-      .from('patient_schedules')
-      .select(`
-        *,
-        items (
-          id,
-          name,
-          cycle_value,
-          cycle_unit
-        )
-      `)
-      .eq('id', scheduleId)
-      .eq('patient_id', id)
-      .eq('is_active', true)
-      .single();
+    // Call the PostgreSQL function to handle all operations in a transaction
+    const { data: result, error: rpcError } = await supabase
+      .rpc('complete_patient_schedule', {
+        p_patient_id: id,
+        p_schedule_id: scheduleId,
+        p_actual_implementation_date: actual_implementation_date,
+        p_notes: notes || null,
+        p_scheduled_date: scheduled_date || null
+      });
     
-    if (scheduleError || !schedule) {
-      return NextResponse.json(
-        { error: '활성 일정을 찾을 수 없습니다' },
-        { status: 404 }
-      );
-    }
-    
-    // Use scheduled_date from request or next_due_date from schedule
-    const targetScheduledDate = scheduled_date || schedule.next_due_date;
-    
-    // Check if there's already a completed entry for this scheduled date
-    const { data: existingHistory } = await supabase
-      .from('schedule_history')
-      .select('id, is_completed')
-      .eq('patient_schedule_id', scheduleId)
-      .eq('scheduled_date', targetScheduledDate)
-      .single();
-    
-    if (existingHistory?.is_completed) {
-      return NextResponse.json(
-        { error: '이미 완료된 일정입니다' },
-        { status: 409 }
-      );
-    }
-    
-    // Calculate next due date based on actual implementation date
-    const actualDate = new Date(actual_implementation_date);
-    const nextDueDate = calculateNextDueDate({
-      startDate: actualDate,
-      cycleValue: schedule.items.cycle_value,
-      cycleUnit: schedule.items.cycle_unit as 'weeks' | 'months',
-    });
-    
-    // Start transaction-like operations
-    try {
-      // 1. Update or create schedule history entry
-      let historyEntry;
-      if (existingHistory) {
-        // Update existing entry
-        const { data, error } = await supabase
-          .from('schedule_history')
-          .update({
-            actual_implementation_date,
-            is_completed: true,
-            notes,
-          })
-          .eq('id', existingHistory.id)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        historyEntry = data;
-      } else {
-        // Create new entry
-        const { data, error } = await supabase
-          .from('schedule_history')
-          .insert({
-            patient_schedule_id: scheduleId,
-            scheduled_date: targetScheduledDate,
-            actual_implementation_date,
-            is_completed: true,
-            notes,
-          })
-          .select()
-          .single();
-        
-        if (error) throw error;
-        historyEntry = data;
+    if (rpcError) {
+      console.error('Error completing schedule:', rpcError);
+      
+      // Handle specific error messages from the function
+      if (rpcError.message.includes('활성 일정을 찾을 수 없습니다')) {
+        return NextResponse.json(
+          { error: '활성 일정을 찾을 수 없습니다' },
+          { status: 404 }
+        );
       }
       
-      // 2. Update patient schedule with new next due date and last implementation date
-      const { data: updatedSchedule, error: updateError } = await supabase
-        .from('patient_schedules')
-        .update({
-          next_due_date: nextDueDate.toISOString().split('T')[0],
-          last_implementation_date: actual_implementation_date,
-        })
-        .eq('id', scheduleId)
-        .select(`
-          *,
-          items (*)
-        `)
-        .single();
-      
-      if (updateError) throw updateError;
-      
-      // 3. Create next schedule history entry (incomplete)
-      const { error: nextHistoryError } = await supabase
-        .from('schedule_history')
-        .insert({
-          patient_schedule_id: scheduleId,
-          scheduled_date: nextDueDate.toISOString().split('T')[0],
-          is_completed: false,
-        });
-      
-      if (nextHistoryError) {
-        console.error('Error creating next history entry:', nextHistoryError);
-        // Don't fail the request as the main completion was successful
+      if (rpcError.message.includes('이미 완료된 일정입니다')) {
+        return NextResponse.json(
+          { error: '이미 완료된 일정입니다' },
+          { status: 409 }
+        );
       }
       
-      return NextResponse.json({
-        message: '일정이 성공적으로 완료되었습니다',
-        schedule: updatedSchedule,
-        history_entry: historyEntry,
-        next_due_date: nextDueDate.toISOString().split('T')[0],
-      }, { status: 200 });
-      
-    } catch (transactionError) {
-      console.error('Transaction error:', transactionError);
       return NextResponse.json(
         { error: '일정 완료 처리 중 오류가 발생했습니다' },
         { status: 500 }
       );
     }
+    
+    if (!result) {
+      return NextResponse.json(
+        { error: '일정 완료 처리에 실패했습니다' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({
+      message: '일정이 성공적으로 완료되었습니다',
+      schedule: result.schedule,
+      history_entry: result.history_entry,
+      next_due_date: result.schedule.next_due_date,
+    }, { status: 200 });
     
   } catch (error) {
     console.error('Unexpected error in POST /api/patients/[id]/schedules/[scheduleId]/complete:', error);

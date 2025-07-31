@@ -164,7 +164,7 @@ export async function PUT(
   }
 }
 
-// DELETE: 환자 삭제 (soft delete - 스케줄을 비활성화)
+// DELETE: 환자 스케줄 비활성화 (soft delete - 환자 레코드는 유지되고 스케줄만 비활성화)
 export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
@@ -212,7 +212,7 @@ export async function DELETE(
     }
     
     return NextResponse.json({ 
-      message: '환자가 성공적으로 삭제되었습니다',
+      message: '환자 스케줄이 성공적으로 비활성화되었습니다',
       patient_id: id 
     });
   } catch (error) {

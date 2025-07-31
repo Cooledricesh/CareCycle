@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPureClient } from '@/lib/supabase/server';
-import { calculateNextDueDateFromLastImplementation } from '@/lib/utils/schedule';
+import { calculateNextDueDateFromLastImplementation, isValidCycleUnit } from '@/lib/utils/schedule';
 import { z } from 'zod';
 
 const completeScheduleSchema = z.object({
@@ -83,10 +83,18 @@ export async function POST(
     const patientSchedule = historyEntry.patient_schedules;
     const item = patientSchedule.items;
     
+    // Validate cycle_unit before using it
+    if (!isValidCycleUnit(item.cycle_unit)) {
+      return NextResponse.json(
+        { error: `유효하지 않은 주기 단위입니다: ${item.cycle_unit}. 'weeks' 또는 'months'만 허용됩니다.` },
+        { status: 400 }
+      );
+    }
+    
     const nextDueDate = calculateNextDueDateFromLastImplementation(
       new Date(patientSchedule.first_implementation_date),
       item.cycle_value,
-      item.cycle_unit as 'weeks' | 'months',
+      item.cycle_unit,
       new Date(actual_implementation_date)
     );
     

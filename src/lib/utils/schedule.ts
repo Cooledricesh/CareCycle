@@ -10,6 +10,15 @@ export interface ScheduleCalculationParams {
 }
 
 /**
+ * Type guard to check if a value is a valid CycleUnit
+ * @param value - The value to check
+ * @returns True if the value is a valid CycleUnit
+ */
+export function isValidCycleUnit(value: unknown): value is CycleUnit {
+  return value === 'weeks' || value === 'months';
+}
+
+/**
  * Calculate the next due date based on the cycle configuration
  * @param params - Schedule calculation parameters
  * @returns The next due date

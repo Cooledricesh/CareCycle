@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPureClient } from '@/lib/supabase/server';
-import { calculateNextDueDate } from '@/lib/utils/schedule';
+import { calculateNextDueDate, isValidCycleUnit } from '@/lib/utils/schedule';
 import { z } from 'zod';
 
 // Add schedule schema
@@ -210,10 +210,19 @@ export async function POST(
     
     // Calculate next due date
     const firstImplementationDate = new Date(first_implementation_date);
+    
+    // Validate cycle_unit before using it
+    if (!isValidCycleUnit(item.cycle_unit)) {
+      return NextResponse.json(
+        { error: `유효하지 않은 주기 단위입니다: ${item.cycle_unit}. 'weeks' 또는 'months'만 허용됩니다.` },
+        { status: 400 }
+      );
+    }
+    
     const nextDueDate = calculateNextDueDate({
       startDate: firstImplementationDate,
       cycleValue: item.cycle_value,
-      cycleUnit: item.cycle_unit as 'weeks' | 'months',
+      cycleUnit: item.cycle_unit,
     });
     
     // Create new schedule
@@ -326,10 +335,19 @@ export async function PUT(
       
       // Recalculate next due date if first implementation date changes
       const firstDate = new Date(first_implementation_date);
+      
+      // Validate cycle_unit before using it
+      if (!isValidCycleUnit(existingSchedule.items.cycle_unit)) {
+        return NextResponse.json(
+          { error: `유효하지 않은 주기 단위입니다: ${existingSchedule.items.cycle_unit}. 'weeks' 또는 'months'만 허용됩니다.` },
+          { status: 400 }
+        );
+      }
+      
       const nextDueDate = calculateNextDueDate({
         startDate: firstDate,
         cycleValue: existingSchedule.items.cycle_value,
-        cycleUnit: existingSchedule.items.cycle_unit as 'weeks' | 'months',
+        cycleUnit: existingSchedule.items.cycle_unit,
       });
       updateData.next_due_date = nextDueDate.toISOString().split('T')[0];
     }

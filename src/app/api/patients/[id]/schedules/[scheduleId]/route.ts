@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPureClient } from '@/lib/supabase/server';
-import { calculateNextDueDate } from '@/lib/utils/schedule';
+import { calculateNextDueDate, isValidCycleUnit } from '@/lib/utils/schedule';
 import { z } from 'zod';
 
 // Update individual schedule schema
@@ -156,12 +156,22 @@ export async function PUT(
     }
     
     // If first_implementation_date is being changed, recalculate next_due_date
-    if (cleanUpdateData.first_implementation_date && !cleanUpdateData.next_due_date) {
+    if (cleanUpdateData.first_implementation_date && typeof cleanUpdateData.first_implementation_date === 'string' && !cleanUpdateData.next_due_date) {
       const firstDate = new Date(cleanUpdateData.first_implementation_date);
+      
+      // Validate cycle_unit before using it
+      const cycleUnit = existingSchedule.items.cycle_unit;
+      if (!isValidCycleUnit(cycleUnit)) {
+        return NextResponse.json(
+          { error: `유효하지 않은 주기 단위입니다: ${cycleUnit}. 'weeks' 또는 'months'만 허용됩니다.` },
+          { status: 400 }
+        );
+      }
+      
       const nextDueDate = calculateNextDueDate({
         startDate: firstDate,
         cycleValue: existingSchedule.items.cycle_value,
-        cycleUnit: existingSchedule.items.cycle_unit as 'weeks' | 'months',
+        cycleUnit: cycleUnit,
       });
       cleanUpdateData.next_due_date = nextDueDate.toISOString().split('T')[0];
     }
