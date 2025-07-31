@@ -1,4 +1,5 @@
-import { addWeeks, addMonths } from 'date-fns';
+import { addWeeks, addMonths, format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export type CycleUnit = 'weeks' | 'months';
 
@@ -80,9 +81,11 @@ export function calculateNextDueDateFromLastImplementation(
  * @param referenceDate - The reference date (defaults to today)
  * @returns True if the due date is before the reference date
  */
-export function isOverdue(dueDate: Date, referenceDate: Date = new Date()): boolean {
+export function isOverdue(dueDate: Date | string, referenceDate: Date = new Date()): boolean {
+  const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
+  
   // Compare only the date parts (ignoring time)
-  const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+  const dueDateOnly = new Date(dueDateObj.getFullYear(), dueDateObj.getMonth(), dueDateObj.getDate());
   const referenceDateOnly = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
   
   return dueDateOnly < referenceDateOnly;
@@ -94,11 +97,24 @@ export function isOverdue(dueDate: Date, referenceDate: Date = new Date()): bool
  * @param referenceDate - The reference date (defaults to today)
  * @returns Number of days (negative if overdue)
  */
-export function getDaysUntilDue(dueDate: Date, referenceDate: Date = new Date()): number {
+export function getDaysUntilDue(dueDate: Date | string, referenceDate: Date = new Date()): number {
+  const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
+  
   // Create date-only versions to ignore time component
-  const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+  const dueDateOnly = new Date(dueDateObj.getFullYear(), dueDateObj.getMonth(), dueDateObj.getDate());
   const referenceDateOnly = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
   
   const diffInMs = dueDateOnly.getTime() - referenceDateOnly.getTime();
   return Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Format a date to Korean locale string
+ * @param date - The date to format
+ * @param formatString - The format string (defaults to 'yyyy년 MM월 dd일')
+ * @returns Formatted date string
+ */
+export function formatDate(date: Date | string, formatString: string = 'yyyy년 MM월 dd일'): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return format(dateObj, formatString, { locale: ko });
 }

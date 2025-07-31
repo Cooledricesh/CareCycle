@@ -166,5 +166,200 @@ describe('Schedule Utilities', () => {
       
       expect(getDaysUntilDue(dueDate, referenceDate)).toBe(0);
     });
+    
+    it('should handle string dates', () => {
+      const dueDate = '2025-01-20';
+      const referenceDate = new Date(Date.UTC(2025, 0, 15));
+      
+      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(5);
+    });
+    
+    it('should handle timezone differences correctly', () => {
+      const dueDate = new Date('2025-01-20T23:59:59Z');
+      const referenceDate = new Date('2025-01-15T01:00:00Z');
+      
+      expect(getDaysUntilDue(dueDate, referenceDate)).toBe(5);
+    });
+  });
+  
+  describe('formatDate', () => {
+    it('should format date with default Korean format', () => {
+      const date = new Date(Date.UTC(2025, 0, 15));
+      const result = formatDate(date);
+      
+      expect(result).toMatch(/2025년.*1월.*15일/);
+    });
+    
+    it('should format string date', () => {
+      const date = '2025-01-15';
+      const result = formatDate(date);
+      
+      expect(result).toMatch(/2025년.*1월.*15일/);
+    });
+    
+    it('should format with custom format string', () => {
+      const date = new Date(Date.UTC(2025, 0, 15));
+      const result = formatDate(date, 'yyyy-MM-dd');
+      
+      expect(result).toBe('2025-01-15');
+    });
+    
+    it('should handle different format patterns', () => {
+      const date = new Date(Date.UTC(2025, 0, 15));
+      const result = formatDate(date, 'MM/dd/yyyy');
+      
+      expect(result).toBe('01/15/2025');
+    });
+  });
+  
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle invalid dates in isOverdue', () => {
+      const invalidDate = new Date('invalid-date');
+      const referenceDate = new Date(Date.UTC(2025, 0, 15));
+      
+      // Should not throw an error
+      const result = isOverdue(invalidDate, referenceDate);
+      expect(typeof result).toBe('boolean');
+    });
+    
+    it('should handle invalid string dates in getDaysUntilDue', () => {
+      const invalidDate = 'invalid-date';
+      const referenceDate = new Date(Date.UTC(2025, 0, 15));
+      
+      // Should not throw an error
+      const result = getDaysUntilDue(invalidDate, referenceDate);
+      expect(typeof result).toBe('number');
+    });
+    
+    it('should use current date as default reference in isOverdue', () => {
+      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
+      
+      expect(isOverdue(futureDate)).toBe(false);
+    });
+    
+    it('should use current date as default reference in getDaysUntilDue', () => {
+      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
+      
+      const result = getDaysUntilDue(futureDate);
+      expect(result).toBeGreaterThanOrEqual(0);
+    });
+    
+    it('should handle calculateNextDueDate with zero cycle value', () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      expect(() => {
+        calculateNextDueDate({
+          startDate,
+          cycleValue: 0,
+          cycleUnit: 'weeks',
+        });
+      }).not.toThrow();
+    });
+    
+    it('should handle calculateNextDueDate with negative cycle value', () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      expect(() => {
+        calculateNextDueDate({
+          startDate,
+          cycleValue: -1,
+          cycleUnit: 'weeks',
+        });
+      }).not.toThrow();
+    });
+    
+    it('should handle very large cycle values', () => {
+      const startDate = new Date(Date.UTC(2025, 0, 1));
+      
+      expect(() => {
+        calculateNextDueDate({
+          startDate,
+          cycleValue: 1000,
+          cycleUnit: 'months',
+        });
+      }).not.toThrow();
+    });
+  });
+  
+  describe('Integration Tests', () => {
+    it('should calculate consistent future dates for a patient schedule', () => {
+      const originalStart = new Date(Date.UTC(2025, 0, 1));
+      const cycleValue = 4;
+      const cycleUnit = 'weeks' as const;
+      
+      // Calculate first follow-up
+      const firstFollowUp = calculateNextDueDate({
+        startDate: originalStart,
+        cycleValue,
+        cycleUnit,
+      });
+      
+      // Calculate second follow-up from first
+      const secondFollowUp = calculateNextDueDate({
+        startDate: firstFollowUp,
+        cycleValue,
+        cycleUnit,
+      });
+      
+      // Should be consistent with future dates calculation
+      const futureDates = calculateFutureDueDates({
+        startDate: originalStart,
+        cycleValue,
+        cycleUnit,
+      }, 2);
+      
+      expect(firstFollowUp.getTime()).toBe(futureDates[0].getTime());
+      expect(secondFollowUp.getTime()).toBe(futureDates[1].getTime());
+    });
+    
+    it('should handle patient missing appointments scenario', () => {
+      const originalStart = new Date(Date.UTC(2025, 0, 1));
+      const missedDate = new Date(Date.UTC(2025, 0, 29)); // Should have been first appointment
+      const actualImplementation = new Date(Date.UTC(2025, 1, 15)); // Actually came later
+      
+      const nextDueFromOriginal = calculateNextDueDateFromLastImplementation(
+        originalStart,
+        4,
+        'weeks'
+      );
+      
+      const nextDueFromActual = calculateNextDueDateFromLastImplementation(
+        originalStart,
+        4,
+        'weeks',
+        actualImplementation
+      );
+      
+      expect(nextDueFromOriginal.getTime()).toBe(missedDate.getTime());
+      expect(nextDueFromActual.getTime()).not.toBe(nextDueFromOriginal.getTime());
+      expect(nextDueFromActual > actualImplementation).toBe(true);
+    });
+    
+    it('should work with realistic healthcare schedule example', () => {
+      // Monthly blood test for diabetes patient
+      const firstTest = new Date(Date.UTC(2025, 0, 15)); // Jan 15
+      const cycleValue = 1;
+      const cycleUnit = 'months' as const;
+      
+      // Calculate next 6 months of tests
+      const futureDates = calculateFutureDueDates({
+        startDate: firstTest,
+        cycleValue,
+        cycleUnit,
+      }, 6);
+      
+      expect(futureDates[0].toISOString().split('T')[0]).toBe('2025-02-15');
+      expect(futureDates[1].toISOString().split('T')[0]).toBe('2025-03-15');
+      expect(futureDates[2].toISOString().split('T')[0]).toBe('2025-04-15');
+      expect(futureDates[3].toISOString().split('T')[0]).toBe('2025-05-15');
+      expect(futureDates[4].toISOString().split('T')[0]).toBe('2025-06-15');
+      expect(futureDates[5].toISOString().split('T')[0]).toBe('2025-07-15');
+      
+      // Check if any are overdue (assuming current date is after some of them)
+      const referenceDate = new Date(Date.UTC(2025, 2, 20)); // March 20
+      const overdueDates = futureDates.filter(date => isOverdue(date, referenceDate));
+      
+      expect(overdueDates).toHaveLength(2); // Feb and March should be overdue
+    });
   });
 });
