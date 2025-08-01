@@ -14,7 +14,7 @@ const corsHeaders = {
 
 interface NotificationRequest {
   type: 'daily' | 'reminder' | 'overdue';
-  patientId?: string;
+  userId?: string;
   date?: string;
 }
 
@@ -66,18 +66,22 @@ interface ScheduleHistory {
   patient_schedules: PatientSchedule;
 }
 
-// Type for the accumulator in reduce
-interface PatientScheduleGroup {
-  patient: Patient;
+// Type for schedule groups
+interface ScheduleGroup {
   schedules: Array<{
+    patient: Patient;
     item: Item;
     scheduled_date: string;
     is_overdue: boolean;
+    history_id: string;
   }>;
 }
 
-interface PatientSchedulesMap {
-  [patientId: string]: PatientScheduleGroup;
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  notification_enabled: boolean;
 }
 
 serve(async (req) => {
@@ -102,7 +106,7 @@ serve(async (req) => {
     }
 
     // Validate required fields
-    const { type, patientId, date } = body as NotificationRequest;
+    const { type, userId, date } = body as NotificationRequest;
 
     // Check if type is provided and valid
     if (!type) {
@@ -125,10 +129,10 @@ serve(async (req) => {
       );
     }
 
-    // Validate patientId if provided
-    if (patientId !== undefined && typeof patientId !== 'string') {
+    // Validate userId if provided
+    if (userId !== undefined && typeof userId !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Invalid patientId. Must be a string' }),
+        JSON.stringify({ error: 'Invalid userId. Must be a string' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -175,6 +179,29 @@ serve(async (req) => {
 
     const targetDate = date || new Date().toISOString().split('T')[0];
 
+    // Get all users who have notifications enabled
+    let usersQuery = supabase
+      .from('profiles')
+      .select('*')
+      .eq('notification_enabled', true);
+    
+    if (userId) {
+      usersQuery = usersQuery.eq('id', userId);
+    }
+
+    const { data: users, error: usersError } = await usersQuery;
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    if (!users || users.length === 0) {
+      return new Response(
+        JSON.stringify({ message: 'No users with notifications enabled' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch schedules based on notification type
     let query = supabase
       .from('schedule_history')
@@ -186,25 +213,21 @@ serve(async (req) => {
           items!inner(*)
         )
       `)
-      .eq('is_completed', false);
+      .eq('is_completed', false)
+      .eq('is_notified', false);
 
     if (type === 'daily') {
       // Get today's schedules
       query = query.eq('scheduled_date', targetDate);
     } else if (type === 'reminder') {
-      // Get upcoming schedules (next 3 days)
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 3);
-      query = query
-        .gte('scheduled_date', targetDate)
-        .lte('scheduled_date', endDate.toISOString().split('T')[0]);
+      // Get schedules where notification should be sent (notification_scheduled_at <= today)
+      const [year, month, day] = targetDate.split('-').map(Number);
+      // Create date at exact end of UTC day (23:59:59.999)
+      const endOfDayUTC = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+      query = query.lte('notification_scheduled_at', endOfDayUTC.toISOString());
     } else if (type === 'overdue') {
       // Get overdue schedules
       query = query.lt('scheduled_date', targetDate);
-    }
-
-    if (patientId) {
-      query = query.eq('patient_schedules.patient_id', patientId);
     }
 
     const { data: schedules, error } = await query;
@@ -220,77 +243,116 @@ serve(async (req) => {
       );
     }
 
-    // Group schedules by patient
-    const patientSchedules = schedules.reduce((acc: PatientSchedulesMap, schedule: ScheduleHistory) => {
-      const patientId = schedule.patient_schedules.patients.id;
-      if (!acc[patientId]) {
-        acc[patientId] = {
-          patient: schedule.patient_schedules.patients,
-          schedules: []
-        };
-      }
-      acc[patientId].schedules.push({
-        item: schedule.patient_schedules.items,
-        scheduled_date: schedule.scheduled_date,
-        is_overdue: new Date(schedule.scheduled_date) < new Date(targetDate)
-      });
-      return acc;
-    }, {} as PatientSchedulesMap);
+    // Prepare schedule data
+    const scheduleData: ScheduleGroup['schedules'] = schedules.map((schedule: ScheduleHistory) => ({
+      patient: schedule.patient_schedules.patients,
+      item: schedule.patient_schedules.items,
+      scheduled_date: schedule.scheduled_date,
+      is_overdue: new Date(schedule.scheduled_date) < new Date(targetDate),
+      history_id: schedule.id
+    }));
 
-    // Send emails using Resend
-    const emailPromises = Object.values(patientSchedules).map(async (data: PatientScheduleGroup) => {
+    // Send emails to users
+    const emailPromises = users.map(async (user: Profile) => {
       const subject = type === 'overdue' 
-        ? `[CareCycle] 지연된 검사/주사 일정 알림`
-        : `[CareCycle] 예정된 검사/주사 일정 알림`;
+        ? `[CareCycle] 지연된 환자 검사/주사 일정 알림`
+        : type === 'reminder'
+        ? `[CareCycle] 예정된 환자 검사/주사 일정 알림`
+        : `[CareCycle] 오늘의 환자 검사/주사 일정`;
 
-      const scheduleList = data.schedules.map((schedule) => 
-        `- ${schedule.item.name} (${schedule.item.cycle_value}${schedule.item.cycle_unit === 'weeks' ? '주' : '개월'} 주기) - ${schedule.scheduled_date}${schedule.is_overdue ? ' [지연됨]' : ''}`
-      ).join('\n');
+      // Group schedules by patient for better organization
+      const patientGroups = scheduleData.reduce((acc: { [key: string]: typeof scheduleData }, schedule) => {
+        const patientId = schedule.patient.id;
+        if (!acc[patientId]) {
+          acc[patientId] = [];
+        }
+        acc[patientId].push(schedule);
+        return acc;
+      }, {});
+
+      const scheduleList = Object.entries(patientGroups).map(([_, patientSchedules]) => {
+        const patient = patientSchedules[0].patient;
+        const items = patientSchedules.map(s => 
+          `  - ${s.item.name} (${s.item.cycle_value}${s.item.cycle_unit === 'weeks' ? '주' : '개월'} 주기) - ${s.scheduled_date}${s.is_overdue ? ' [지연됨]' : ''}`
+        ).join('\n');
+        return `${patient.name} (${patient.patient_number}):\n${items}`;
+      }).join('\n\n');
 
       const emailBody = `
-안녕하세요, ${data.patient.name}님.
+안녕하세요, ${user.full_name || user.email}님.
 
-CareCycle에서 알려드립니다.
-${type === 'overdue' ? '다음 일정이 지연되었습니다:' : '다음 일정이 예정되어 있습니다:'}
-
+CareCycle에서 관리 중인 환자들의 검사/주사 일정을 알려드립니다.
+${type === 'overdue' ? '\n다음 일정이 지연되었습니다:\n' : type === 'reminder' ? '\n다음 일정이 예정되어 있습니다:\n' : '\n오늘 예정된 일정:\n'}
 ${scheduleList}
 
-병원에 문의하여 일정을 확인해 주시기 바랍니다.
+각 환자에게 연락하여 일정을 확인해 주시기 바랍니다.
 
 감사합니다.
 CareCycle 팀 드림
       `;
 
-      // Here you would use Resend API to send the email
-      // For now, we'll just log it
-      console.log(`Sending email to ${data.patient.name}:`, emailBody);
+      // Use Resend API to send the email
+      if (RESEND_API_KEY && RESEND_API_KEY !== '') {
+        try {
+          const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'CareCycle <noreply@carecycle.app>',
+              to: user.email,
+              subject,
+              text: emailBody,
+            }),
+          });
 
-      // TODO: Implement actual Resend API call
-      // const response = await fetch('https://api.resend.com/emails', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${RESEND_API_KEY}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     from: 'CareCycle <notifications@carecycle.com>',
-      //     to: data.patient.email,
-      //     subject,
-      //     text: emailBody,
-      //   }),
-      // });
+          if (!response.ok) {
+            const error = await response.text();
+            console.error(`Failed to send email to ${user.email}:`, error);
+            return { user: user.email, status: 'failed', error };
+          }
 
-      return { patient: data.patient.name, status: 'sent' };
+          // Mark schedules as notified
+          const scheduleIds = scheduleData.map(s => s.history_id);
+          await supabase
+            .from('schedule_history')
+            .update({ is_notified: true })
+            .in('id', scheduleIds);
+
+          // Save notification record
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: user.id,
+              type,
+              title: subject,
+              message: emailBody,
+              schedule_ids: scheduleIds
+            });
+
+          return { user: user.email, status: 'sent' };
+        } catch (error) {
+          console.error(`Error sending email to ${user.email}:`, error);
+          return { user: user.email, status: 'failed', error: error.message };
+        }
+      } else {
+        // If no Resend API key, just log the email
+        console.log(`[DEMO MODE] Would send email to ${user.email}:`, emailBody);
+        return { user: user.email, status: 'demo_sent' };
+      }
     });
 
     const results = await Promise.all(emailPromises);
 
     return new Response(
       JSON.stringify({ 
-        message: 'Notifications sent',
+        message: 'Notifications processed',
         results,
         totalSchedules: schedules.length,
-        totalPatients: Object.keys(patientSchedules).length
+        totalUsers: users.length,
+        successCount: results.filter(r => r.status === 'sent' || r.status === 'demo_sent').length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
