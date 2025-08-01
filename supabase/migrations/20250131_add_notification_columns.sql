@@ -41,6 +41,14 @@ CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can view their own notifications" ON notifications;
+DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
+DROP POLICY IF EXISTS "Users can update their own notifications" ON notifications;
+
 -- RLS policies for profiles table
 CREATE POLICY "Users can view their own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
@@ -56,7 +64,7 @@ CREATE POLICY "Users can view their own notifications" ON notifications
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "System can insert notifications" ON notifications
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 CREATE POLICY "Users can update their own notifications" ON notifications
   FOR UPDATE USING (auth.uid() = user_id);
@@ -71,10 +79,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS set_notification_scheduled_at ON schedule_history;
+
 CREATE TRIGGER set_notification_scheduled_at
 BEFORE INSERT ON schedule_history
 FOR EACH ROW
 EXECUTE FUNCTION calculate_notification_scheduled_at();
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 
 -- Create trigger to update updated_at for profiles
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
@@ -98,8 +112,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
 -- Create trigger for new user signup
-CREATE OR REPLACE TRIGGER on_auth_user_created
+CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 

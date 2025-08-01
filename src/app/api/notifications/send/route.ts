@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 async function sendScheduleNotification(
   type: string,
-  patientId?: string,
+  userId?: string,
   date?: string
 ) {
   const supabase = await createClient();
@@ -35,7 +35,7 @@ async function sendScheduleNotification(
   const { data, error } = await supabase.functions.invoke('send-schedule-notifications', {
     body: {
       type,
-      patientId,
+      userId,
       date
     }
   });
@@ -59,9 +59,9 @@ async function sendScheduleNotification(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, patientId, date } = body;
+    const { type, userId, date } = body;
 
-    const result = await sendScheduleNotification(type, patientId, date);
+    const result = await sendScheduleNotification(type, userId, date);
 
     if (!result.success) {
       return NextResponse.json(
@@ -88,11 +88,11 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const checkType = searchParams.get('check') || 'daily';
-    const patientId = searchParams.get('patientId') || undefined;
+    const userId = searchParams.get('userId') || undefined;
     const date = searchParams.get('date') || undefined;
 
     // This endpoint can be called by a cron job to check for notifications
-    const result = await sendScheduleNotification(checkType, patientId, date);
+    const result = await sendScheduleNotification(checkType, userId, date);
 
     if (!result.success) {
       return NextResponse.json(

@@ -196,7 +196,7 @@ export function NotificationBadge() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link
-            href="/dashboard/settings"
+            href="/settings"
             className="text-center w-full justify-center text-sm"
           >
             알림 설정

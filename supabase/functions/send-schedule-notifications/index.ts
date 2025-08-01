@@ -221,7 +221,10 @@ serve(async (req) => {
       query = query.eq('scheduled_date', targetDate);
     } else if (type === 'reminder') {
       // Get schedules where notification should be sent (notification_scheduled_at <= today)
-      query = query.lte('notification_scheduled_at', targetDate + 'T23:59:59Z');
+      const [year, month, day] = targetDate.split('-').map(Number);
+      // Create date at exact end of UTC day (23:59:59.999)
+      const endOfDayUTC = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+      query = query.lte('notification_scheduled_at', endOfDayUTC.toISOString());
     } else if (type === 'overdue') {
       // Get overdue schedules
       query = query.lt('scheduled_date', targetDate);
