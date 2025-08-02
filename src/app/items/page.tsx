@@ -41,6 +41,117 @@ const initialFormData: ItemFormData = {
   description: '',
 };
 
+interface ItemFormProps {
+  formData: ItemFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ItemFormData>>;
+  handleSubmit: (e: React.FormEvent) => void;
+  submitting: boolean;
+  editingItem: Item | null;
+  setIsAddDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsEditDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setEditingItem: React.Dispatch<React.SetStateAction<Item | null>>;
+}
+
+const ItemForm = ({
+  formData,
+  setFormData,
+  handleSubmit,
+  submitting,
+  editingItem,
+  setIsAddDialogOpen,
+  setIsEditDialogOpen,
+  setEditingItem,
+}: ItemFormProps) => (
+  <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-2">
+      <Label htmlFor="name">항목 이름</Label>
+      <Input
+        id="name"
+        value={formData.name}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        placeholder="예: 심리검사, 뇌파검사"
+        required
+      />
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="category">카테고리</Label>
+      <Select
+        value={formData.category}
+        onValueChange={(value: 'test' | 'injection') => setFormData({ ...formData, category: value })}
+      >
+        <SelectTrigger id="category">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="test">검사</SelectItem>
+          <SelectItem value="injection">주사</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="cycle_value">주기 값</Label>
+        <Input
+          id="cycle_value"
+          type="number"
+          min="1"
+          value={formData.cycle_value}
+          onChange={(e) => setFormData({ ...formData, cycle_value: parseInt(e.target.value) || 1 })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cycle_unit">주기 단위</Label>
+        <Select
+          value={formData.cycle_unit}
+          onValueChange={(value: 'weeks' | 'months') => setFormData({ ...formData, cycle_unit: value })}
+        >
+          <SelectTrigger id="cycle_unit">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="weeks">주</SelectItem>
+            <SelectItem value="months">개월</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="description">설명 (선택)</Label>
+      <Textarea
+        id="description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        placeholder="이 항목에 대한 추가 설명을 입력하세요"
+        rows={3}
+      />
+    </div>
+
+    <DialogFooter>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          setIsAddDialogOpen(false);
+          setIsEditDialogOpen(false);
+          setFormData(initialFormData);
+          setEditingItem(null);
+        }}
+        disabled={submitting}
+      >
+        취소
+      </Button>
+      <Button type="submit" disabled={submitting}>
+        {submitting ? '저장 중...' : editingItem ? '수정' : '추가'}
+      </Button>
+    </DialogFooter>
+  </form>
+);
+
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,97 +274,6 @@ export default function ItemsPage() {
     injection: items.filter(item => item.category === 'injection'),
   };
 
-  const ItemForm = () => (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">항목 이름</Label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="예: 심리검사, 뇌파검사"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="category">카테고리</Label>
-        <Select
-          value={formData.category}
-          onValueChange={(value: 'test' | 'injection') => setFormData({ ...formData, category: value })}
-        >
-          <SelectTrigger id="category">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="test">검사</SelectItem>
-            <SelectItem value="injection">주사</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="cycle_value">주기 값</Label>
-          <Input
-            id="cycle_value"
-            type="number"
-            min="1"
-            value={formData.cycle_value}
-            onChange={(e) => setFormData({ ...formData, cycle_value: parseInt(e.target.value) || 1 })}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="cycle_unit">주기 단위</Label>
-          <Select
-            value={formData.cycle_unit}
-            onValueChange={(value: 'weeks' | 'months') => setFormData({ ...formData, cycle_unit: value })}
-          >
-            <SelectTrigger id="cycle_unit">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weeks">주</SelectItem>
-              <SelectItem value="months">개월</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">설명 (선택)</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="이 항목에 대한 추가 설명을 입력하세요"
-          rows={3}
-        />
-      </div>
-
-      <DialogFooter>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            setIsAddDialogOpen(false);
-            setIsEditDialogOpen(false);
-            setFormData(initialFormData);
-            setEditingItem(null);
-          }}
-          disabled={submitting}
-        >
-          취소
-        </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? '저장 중...' : editingItem ? '수정' : '추가'}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
-
   const ItemCard = ({ item }: { item: Item }) => (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -339,7 +359,16 @@ export default function ItemsPage() {
                   검사 또는 주사 항목을 추가합니다
                 </DialogDescription>
               </DialogHeader>
-              <ItemForm />
+              <ItemForm
+                formData={formData}
+                setFormData={setFormData}
+                handleSubmit={handleSubmit}
+                submitting={submitting}
+                editingItem={editingItem}
+                setIsAddDialogOpen={setIsAddDialogOpen}
+                setIsEditDialogOpen={setIsEditDialogOpen}
+                setEditingItem={setEditingItem}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -446,7 +475,16 @@ export default function ItemsPage() {
               항목 정보를 수정합니다
             </DialogDescription>
           </DialogHeader>
-          <ItemForm />
+          <ItemForm
+            formData={formData}
+            setFormData={setFormData}
+            handleSubmit={handleSubmit}
+            submitting={submitting}
+            editingItem={editingItem}
+            setIsAddDialogOpen={setIsAddDialogOpen}
+            setIsEditDialogOpen={setIsEditDialogOpen}
+            setEditingItem={setEditingItem}
+          />
         </DialogContent>
       </Dialog>
     </div>

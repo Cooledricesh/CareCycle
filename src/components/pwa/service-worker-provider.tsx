@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { registerServiceWorker, requestNotificationPermission, subscribeToPushNotifications } from '@/lib/service-worker/register';
+import { registerServiceWorker, requestNotificationPermission, subscribeToPushNotifications, skipWaitingAndReload } from '@/lib/service-worker/register';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
@@ -29,18 +29,18 @@ export function ServiceWorkerProvider() {
   }, []);
 
   useEffect(() => {
-    if (!registration) return;
-
-    const handleControllerChange = () => {
+    // Listen for service worker update events
+    const handleUpdateFound = (event: CustomEvent) => {
+      console.log('Service worker update found');
       setShowUpdatePrompt(true);
     };
 
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+    window.addEventListener('serviceWorkerUpdateFound', handleUpdateFound as EventListener);
     
     return () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      window.removeEventListener('serviceWorkerUpdateFound', handleUpdateFound as EventListener);
     };
-  }, [registration]);
+  }, []);
 
   const handleEnableNotifications = async () => {
     try {
@@ -70,7 +70,9 @@ export function ServiceWorkerProvider() {
   };
 
   const handleUpdate = () => {
-    window.location.reload();
+    // Send message to service worker to skip waiting with user consent
+    skipWaitingAndReload();
+    setShowUpdatePrompt(false);
   };
 
   return (

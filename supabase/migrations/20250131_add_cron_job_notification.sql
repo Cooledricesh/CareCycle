@@ -4,22 +4,46 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- Grant usage on cron schema to postgres role
 GRANT USAGE ON SCHEMA cron TO postgres;
 
--- Create function to call Edge Function
-CREATE OR REPLACE FUNCTION schedule_daily_notifications()
+-- Create a configuration table for storing project-specific settings
+CREATE TABLE IF NOT EXISTS public.app_config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Insert project reference (this should be set during deployment)
+-- The value will need to be updated with the actual project reference
+INSERT INTO public.app_config (key, value) 
+VALUES ('project_ref', 'YOUR_PROJECT_REF_HERE')
+ON CONFLICT (key) DO UPDATE SET 
+  value = EXCLUDED.value,
+  updated_at = timezone('utc'::text, now());
+
+-- Create helper function for sending notifications
+CREATE OR REPLACE FUNCTION send_notification_request(notification_type TEXT)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
 DECLARE
   function_url TEXT;
   auth_header TEXT;
+  project_ref TEXT;
 BEGIN
-  -- Get the Edge Function URL
-  SELECT 
-    'https://' || project_ref || '.supabase.co/functions/v1/send-schedule-notifications'
-  INTO function_url
-  FROM (
-    SELECT split_part(current_database(), '_', 2) as project_ref
-  ) t;
+  -- Get project reference from config table
+  SELECT value 
+  INTO project_ref
+  FROM public.app_config 
+  WHERE key = 'project_ref'
+  LIMIT 1;
+
+  -- Validate project reference
+  IF project_ref IS NULL OR project_ref = 'YOUR_PROJECT_REF_HERE' THEN
+    RAISE EXCEPTION 'Project reference not configured. Please update app_config table with actual project_ref value.';
+  END IF;
+
+  -- Build the Edge Function URL
+  function_url := format('https://%s.supabase.co/functions/v1/send-schedule-notifications', project_ref);
 
   -- Get service role key from vault
   SELECT decrypted_secret 
@@ -37,9 +61,20 @@ BEGIN
         'Authorization', 'Bearer ' || auth_header
       ),
       body := jsonb_build_object(
-        'type', 'daily'
+        'type', notification_type
       )
     );
+END;
+$$;
+
+-- Create function to call Edge Function  
+CREATE OR REPLACE FUNCTION schedule_daily_notifications()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Delegate to the helper function with 'daily' type
+  PERFORM send_notification_request('daily');
 END;
 $$;
 
@@ -55,32 +90,14 @@ SELECT cron.schedule(
 SELECT cron.schedule(
   'reminder-schedule-notifications', -- job name
   '0 0 * * *', -- cron expression: every day at 00:00 UTC (9 AM KST)
-  $$
-  SELECT net.http_post(
-    url := 'https://' || split_part(current_database(), '_', 2) || '.supabase.co/functions/v1/send-schedule-notifications',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1)
-    ),
-    body := jsonb_build_object('type', 'reminder')
-  );
-  $$
+  $$SELECT send_notification_request('reminder');$$
 );
 
 -- Create cron job for overdue notifications at 10 AM KST  
 SELECT cron.schedule(
   'overdue-schedule-notifications', -- job name
   '0 1 * * *', -- cron expression: every day at 01:00 UTC (10 AM KST)
-  $$
-  SELECT net.http_post(
-    url := 'https://' || split_part(current_database(), '_', 2) || '.supabase.co/functions/v1/send-schedule-notifications',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1)
-    ),
-    body := jsonb_build_object('type', 'overdue')
-  );
-  $$
+  $$SELECT send_notification_request('overdue');$$
 );
 
 -- View all scheduled jobs
@@ -90,3 +107,5 @@ SELECT cron.schedule(
 -- SELECT cron.unschedule('daily-schedule-notifications');
 
 COMMENT ON FUNCTION schedule_daily_notifications() IS 'Calls the Edge Function to send daily schedule notifications to all users';
+COMMENT ON FUNCTION send_notification_request(TEXT) IS 'Helper function to send notification requests to the Edge Function';
+COMMENT ON TABLE public.app_config IS 'Application configuration table for storing project-specific settings';

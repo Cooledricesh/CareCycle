@@ -17,8 +17,11 @@ export async function registerServiceWorker() {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New service worker available
-              console.log('New service worker available, please refresh');
-              // You can show a notification to the user here
+              console.log('New service worker available, waiting for user consent');
+              // Dispatch custom event for the UI to handle
+              window.dispatchEvent(new CustomEvent('serviceWorkerUpdateFound', { 
+                detail: { registration, newWorker } 
+              }));
             }
           });
         }
@@ -134,4 +137,21 @@ function urlBase64ToUint8Array(base64String: string) {
   }
   
   return outputArray;
+}
+
+export async function skipWaitingAndReload() {
+  // Get the waiting service worker
+  const registration = await navigator.serviceWorker.getRegistration();
+  
+  if (registration?.waiting) {
+    // Send message to the waiting service worker to skip waiting
+    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    
+    // Listen for the controlling service worker to change, then reload
+    const controllerChangeHandler = () => {
+      window.location.reload();
+    };
+    
+    navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
+  }
 }
