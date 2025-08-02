@@ -10,6 +10,7 @@ import {
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/components/auth/auth-provider';
 import { NotificationListener } from '@/components/notifications/notification-listener';
+import { ServiceWorkerProvider } from '@/components/pwa/service-worker-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 function makeQueryClient() {
@@ -58,6 +59,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           {children}
           <NotificationListener />
+          <ServiceWorkerProvider />
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>
