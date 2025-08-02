@@ -4,6 +4,7 @@ import { Settings, Database, Bell, Shield, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationSettings } from '@/components/notifications/notification-settings';
+import { NotificationPreferences } from '@/components/settings/notification-preferences';
 import { Badge } from '@/components/ui/badge';
 
 export default function SettingsPage() {
@@ -28,6 +29,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="notifications" className="space-y-4">
+          <NotificationPreferences />
           <NotificationSettings />
         </TabsContent>
 

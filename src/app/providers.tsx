@@ -8,6 +8,10 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
+import { AuthProvider } from '@/components/auth/auth-provider';
+import { NotificationListener } from '@/components/notifications/notification-listener';
+import { ServiceWorkerProvider } from '@/components/pwa/service-worker-provider';
+import { Toaster } from '@/components/ui/toaster';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -51,7 +55,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          {children}
+          <NotificationListener />
+          <ServiceWorkerProvider />
+          <Toaster />
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

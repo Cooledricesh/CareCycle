@@ -8,8 +8,10 @@ import {
   Users, 
   Home,
   Activity,
-  Settings
+  Settings,
+  Package
 } from 'lucide-react';
+import { NotificationBadge } from '@/components/notifications/notification-badge';
 
 const navItems = [
   {
@@ -26,6 +28,11 @@ const navItems = [
     title: '일정 관리',
     href: '/schedules',
     icon: CalendarDays,
+  },
+  {
+    title: '항목 관리',
+    href: '/items',
+    icon: Package,
   },
   {
     title: '설정',
@@ -72,8 +79,10 @@ export function NavigationBar() {
             </div>
           </div>
 
-          {/* Mobile: Empty space for symmetry */}
-          <div className="md:hidden w-10" />
+          {/* Notification Badge */}
+          <div className="flex items-center">
+            <NotificationBadge />
+          </div>
         </div>
 
       </div>
@@ -81,7 +90,7 @@ export function NavigationBar() {
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
         <div className="flex justify-around items-center h-16">
-          {navItems.map((item) => {
+          {navItems.filter(item => item.href !== '/settings').map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
